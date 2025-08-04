@@ -1,3 +1,4 @@
+// Package common to provide functions used by all generated files
 package common
 
 import (
