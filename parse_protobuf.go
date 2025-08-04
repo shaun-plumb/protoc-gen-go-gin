@@ -71,7 +71,7 @@ func generateFileContent(gen *protogen.Plugin, file *protogen.File, g *protogen.
 	// g.P("var _ ", "phttp.CallOption")
 	g.P("var _ =", errorsPackage.Ident("New"))
 	g.P("const _ = ", ginPackage.Ident("Version"))
-	g.P("var _ ", commonPackage.Ident("ExtractPathParameters"))
+	g.P("var _ = ", commonPackage.Ident("ExtractPathParameters"))
 	// g.P("const _ = ", "restyv2.Version")
 	g.P()
 
