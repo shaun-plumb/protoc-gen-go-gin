@@ -1,2 +1,27 @@
-# protoc-gen-go-gin
-# protoc-gen-go-gin
+# protoc-gen-go-http
+generate go http server code via proto buffer
+
+## install
+
+```shell
+$ go get github.com/shaun-plumb/protoc-gen-go-gin
+```
+
+## how to use
+
+```shell
+$ make proto
+# or
+$ protoc -I/usr/local/include -I$(GOPATH)/src/github.com/googleapis/googleapis\
+ 	--proto_path=$(GOPATH)/src:. --go_out=. --go-http_out=. --go-grpc_out=.\
+ 	 path/to/file.proto
+```
+
+## customize
+
+click [here](https://yusank.github.io/posts/go-protoc-http/) to learn how to deveop a simple protoc plugin.
+
+## TODO
+
+- [x] support [validate](https://github.com/envoyproxy/protoc-gen-validate)
+- [x] gen client code.
