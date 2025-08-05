@@ -1,4 +1,4 @@
-# protoc-gen-go-http
+# protoc-gen-go-gin
 generate go http server code via proto buffer
 
 ## install

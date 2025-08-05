@@ -7,7 +7,7 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
-// Version protoc-gen-go-http 工具版本
+// Version protoc-gen-go-gin 工具版本
 const Version = "v0.0.2"
 
 func main() {
@@ -24,9 +24,14 @@ func main() {
 	genValidateCode := flags.Bool("validate", false, "add validate request params in handler")
 	// 生成代码时参数 这么传：--go-http_out=router=iris,validate=true:.
 
+	genService := flags.Bool("service", false, "generate service code")
+	genPath := flags.String("genpath", "", "directory of generated files")
+
 	gp := &GenParam{
 		Omitempty:       omitempty,
 		GenValidateCode: genValidateCode,
+		GenService:      genService,
+		GenPath: genPath,
 	}
 	// 这里就是入口，指定 option 后执行 Run 方法 ，我们的主逻辑就是在 Run 方法
 	protogen.Options{
@@ -39,17 +44,17 @@ func main() {
 			}
 			// 这里是我们的生成代码方法
 			generateHTTPFile(gen, f, gp)
+			if *gp.GenService {
+				generateServiceFile(gen, f, gp)
+			}
 		}
-		//generateLibraryFile(gen)
 		return nil
 	})
-}
-
-func generateLibraryFile(gen *protogen.Plugin) {
-	panic("unimplemented")
 }
 
 type GenParam struct {
 	Omitempty       *bool
 	GenValidateCode *bool
+	GenService      *bool
+	GenPath			*string
 }

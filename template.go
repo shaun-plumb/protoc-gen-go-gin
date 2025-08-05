@@ -67,3 +67,27 @@ func _{{$svrType}}_{{.Name}}{{.Num}}_HTTP_Handler(srv {{$svrType}}HTTPHandler) f
 }
 {{end}}
 `
+
+var serviceCodeTmpl = `
+
+{{$package := .PackageName}}
+{{$serviceType := .ServiceType}}
+
+type {{$serviceType}}HTTPHandler struct {
+    {{$package}}.Unimplemented{{$serviceType}}Server
+}
+
+func New{{$serviceType}}HTTPHandler() *{{$serviceType}}HTTPHandler {
+	return &{{$serviceType}}HTTPHandler{}
+}
+
+{{range .Methods}}
+/*
+func (s *{{$serviceType}}HTTPHandler) {{.Name}}(ctx context.Context, req *{{$package}}.{{.Request}}) (*{{$package}}.{{.Reply}}, error) {
+    panic("not implemented")
+}
+*/
+{{end}}
+ 
+
+`
