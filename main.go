@@ -8,7 +8,7 @@ import (
 )
 
 // Version protoc-gen-go-gin 工具版本
-const Version = "v0.0.2"
+const Version = "v0.0.3"
 
 func main() {
 	// 1. 传参定义
@@ -31,8 +31,9 @@ func main() {
 		Omitempty:       omitempty,
 		GenValidateCode: genValidateCode,
 		GenService:      genService,
-		GenPath: genPath,
+		GenPath:         genPath,
 	}
+
 	// 这里就是入口，指定 option 后执行 Run 方法 ，我们的主逻辑就是在 Run 方法
 	protogen.Options{
 		ParamFunc: flags.Set,
@@ -44,8 +45,8 @@ func main() {
 			}
 			// 这里是我们的生成代码方法
 			generateHTTPFile(gen, f, gp)
-			if *gp.GenService {
-				generateServiceFile(gen, f, gp)
+			if *gp.GenService && *gp.GenPath != ""{
+				generateServiceFiles(gen, f, gp)
 			}
 		}
 		return nil
@@ -56,5 +57,6 @@ type GenParam struct {
 	Omitempty       *bool
 	GenValidateCode *bool
 	GenService      *bool
-	GenPath			*string
+	GenPath         *string
+	GenRegister     *bool
 }

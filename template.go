@@ -72,6 +72,43 @@ var serviceCodeTmpl = `
 
 {{$package := .PackageName}}
 {{$serviceType := .ServiceType}}
+{{$sampleMethod := index .Methods 0 }}
+
+/*
+{{$serviceType}}HTTPHandler is the service handler where the individual method handlers are implemented for {{$serviceType}}
+*/
+/* === IMPLEMENTATION INSTRUCTIONS ===
+Initially, the service is implemented by {{$package}}.Unimplemented{{$serviceType}}Server, which means that all unimplemented 
+methods will respond with an HTTP 500 status and a JSON formatted error message.
+
+The following tasks remain to implement this service.
+
+* Firstly - implement each of the individual method handlers like this:
+
+func (s *{{$serviceType}}HTTPHandler) {{$sampleMethod.Name}}(ctx context.Context, req *{{$package}}.{{$sampleMethod.Request}}) (*{{$package}}.{{$sampleMethod.Reply}}, error) {
+ 	return &{{$package}}.{{$sampleMethod.Reply}}{
+		Id:       req.Id,
+        ... other data
+	}, nil   
+}
+
+* Secondly, to register this service handler with Go-Gin, do something like:
+
+import (
+	"mymodule/generated/{{$package}}"
+	"mymodule/service"
+	"github.com/gin-gonic/gin"
+)
+
+func main() {
+	router := gin.Default()
+    {{$package}}Handler := service.New{{$serviceType}}HTTPHandler() 
+    {{$package}}.Register{{$serviceType}}HTTPHandler(router.Group("/"), {{$package}}Handler)
+}
+
+Once implemented - this message can be deleted.
+=== */
+
 
 type {{$serviceType}}HTTPHandler struct {
     {{$package}}.Unimplemented{{$serviceType}}Server
