@@ -14,18 +14,22 @@ type {{.ServiceType}}HTTPHandler interface {
 {{- end}}
 }
 
+
+type Unimplemented{{$svrType}}HTTPServer struct{}
+{{range .Methods}}
+func (Unimplemented{{$svrType}}HTTPServer) {{.Name}}(context.Context, *{{.Request}}) (*{{.Reply}}, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method {{.Name}} not implemented")
+}
+{{end}}
+
+
+
 // Register{{.ServiceType}}HTTPHandler define http router handle by gin.
 func Register{{.ServiceType}}HTTPHandler(g *gin.RouterGroup, srv {{.ServiceType}}HTTPHandler) {
 {{- range .Methods}}
     g.{{.Method}}("{{.Path}}", _{{$svrType}}_{{.Name}}{{.Num}}_HTTP_Handler(srv))
 {{- end}}
 }
-
-{{if $validate}}
-type Validator interface {
-    Validate() error
-}
-{{end}}
 
 {{range .Methods}}
 // _{{$svrType}}_{{.Name}}{{.Num}}_HTTP_Handler is gin http handler to handle
@@ -47,7 +51,7 @@ func _{{$svrType}}_{{.Name}}{{.Num}}_HTTP_Handler(srv {{$svrType}}HTTPHandler) f
             return
         }
         {{if $validate}}
-        v,ok := interface{}(in).(Validator)
+        v,ok := interface{}(in).(common.Validator)
         if ok {
             if err = v.Validate();err != nil {
                 c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"err": err.Error()})
@@ -78,7 +82,7 @@ var serviceCodeTmpl = `
 {{$serviceType}}HTTPHandler is the service handler where the individual method handlers are implemented for {{$serviceType}}
 */
 /* === IMPLEMENTATION INSTRUCTIONS ===
-Initially, the service is implemented by {{$package}}.Unimplemented{{$serviceType}}Server, which means that all unimplemented 
+Initially, the service is implemented by {{$package}}.Unimplemented{{$serviceType}}HTTPServer, which means that all unimplemented 
 methods will respond with an HTTP 500 status and a JSON formatted error message.
 
 The following tasks remain to implement this service.
@@ -111,7 +115,7 @@ Once implemented - this message can be deleted.
 
 
 type {{$serviceType}}HTTPHandler struct {
-    {{$package}}.Unimplemented{{$serviceType}}Server
+    {{$package}}.Unimplemented{{$serviceType}}HTTPServer
 }
 
 func New{{$serviceType}}HTTPHandler() *{{$serviceType}}HTTPHandler {

@@ -45,8 +45,12 @@ func main() {
 			}
 			// 这里是我们的生成代码方法
 			generateHTTPFile(gen, f, gp)
-			if *gp.GenService && *gp.GenPath != ""{
-				generateServiceFiles(gen, f, gp)
+			if *gp.GenService {
+				if *gp.GenPath != "" {
+					generateServiceFiles(gen, f, gp)
+				} else {
+					panic("Cannot specify service generation without genpath - use '--go-gin_opt=paths=source_relative,service=true,genpath=$OUT_PATH'")
+				}
 			}
 		}
 		return nil

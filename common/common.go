@@ -8,6 +8,10 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+type Validator interface {
+    Validate() error
+}
+
 func ExtractPathParameters(c *gin.Context, in any) {
 	if len(c.Params) > 0 {
 		pMap := "{"
