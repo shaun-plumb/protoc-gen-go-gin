@@ -15,7 +15,7 @@ type Error struct {
 }
 
 type GeneralHTTPError struct {
-	Errors     Error
+	Errors     []Error
 	StatusCode int
 }
 
