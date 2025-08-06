@@ -8,14 +8,14 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type internalErrors struct {
+type Error struct {
 	Type    string
 	Field   string
 	Message string
 }
 
 type GeneralHTTPError struct {
-	Errors     []internalErrors
+	Errors     Error
 	StatusCode int
 }
 
