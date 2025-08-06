@@ -9,14 +9,14 @@ import (
 )
 
 type Error struct {
-	Type    string
-	Field   string
-	Message string
+	Type    string `json:"type"`
+	Field   string `json:"field"`
+	Message string `json:"message"`
 }
 
 type GeneralHTTPError struct {
-	Errors     []Error
-	StatusCode int
+	Errors     []Error `json:"errors"`
+	StatusCode int     `json:"statuscode"`
 }
 
 func ExtractPathParameters(c *gin.Context, in any) {
