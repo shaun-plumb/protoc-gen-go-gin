@@ -8,8 +8,15 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type Validator interface {
-    Validate() error
+type internalErrors struct {
+	Type    string
+	Field   string
+	Message string
+}
+
+type GeneralHTTPError struct {
+	Errors     []internalErrors
+	StatusCode int
 }
 
 func ExtractPathParameters(c *gin.Context, in any) {

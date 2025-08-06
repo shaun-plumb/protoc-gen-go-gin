@@ -61,7 +61,9 @@ func generateServiceFileContent(gen *protogen.Plugin, file *protogen.File, g *pr
 	// As long as the Ident method is called, it will be automatically written to the import, so if there is no
 	// special requirement for the import package name, just use Ident directly
 	g.P("var _ ", contextPackage.Ident("Context"))
+	g.P("var _ =", errorsPackage.Ident("New"))
 	g.P("var _ ", generatedPackage.Ident(fmt.Sprintf("%sHTTPHandler", file.Services[0].GoName)))
+	g.P("const _ = ", ginPackage.Ident("Version"))
 
 	for _, service := range file.Services {
 		genService(gen, file, g, service, gp, true)

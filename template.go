@@ -1,6 +1,5 @@
 package main
 
-// TODO: support validate
 var httpCodeTmpl = `
 {{/*gotype: github.com/shaun-plumb/protoc-gen-go-gin.serviceDesc*/}}
 {{$svrType := .ServiceType}}
@@ -10,19 +9,17 @@ var httpCodeTmpl = `
 // {{.ServiceType}}HTTPHandler defines {{.ServiceType}}Server http handler
 type {{.ServiceType}}HTTPHandler interface {
 {{- range .Methods}}
-    {{.Name}}(context.Context, *{{.Request}}) (*{{.Reply}}, error)
+    {{.Name}}(*gin.Context, *{{.Request}}) (*{{.Reply}}, error)
 {{- end}}
 }
 
 
 type Unimplemented{{$svrType}}HTTPServer struct{}
 {{range .Methods}}
-func (Unimplemented{{$svrType}}HTTPServer) {{.Name}}(context.Context, *{{.Request}}) (*{{.Reply}}, error) {
+func (Unimplemented{{$svrType}}HTTPServer) {{.Name}}(*gin.Context, *{{.Request}}) (*{{.Reply}}, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method {{.Name}} not implemented")
 }
 {{end}}
-
-
 
 // Register{{.ServiceType}}HTTPHandler define http router handle by gin.
 func Register{{.ServiceType}}HTTPHandler(g *gin.RouterGroup, srv {{.ServiceType}}HTTPHandler) {
@@ -34,8 +31,8 @@ func Register{{.ServiceType}}HTTPHandler(g *gin.RouterGroup, srv {{.ServiceType}
 {{range .Methods}}
 // _{{$svrType}}_{{.Name}}{{.Num}}_HTTP_Handler is gin http handler to handle
 // http request [{{.Method}}] {{.Path}}.
-func _{{$svrType}}_{{.Name}}{{.Num}}_HTTP_Handler(srv {{$svrType}}HTTPHandler) func(c *gin.Context) {
-    return func(c *gin.Context) {
+func _{{$svrType}}_{{.Name}}{{.Num}}_HTTP_Handler(srv {{$svrType}}HTTPHandler) func(ctx *gin.Context) {
+    return func(ctx *gin.Context) {
         var (
             err error
             in  = new({{.Request}})
@@ -43,30 +40,27 @@ func _{{$svrType}}_{{.Name}}{{.Num}}_HTTP_Handler(srv {{$svrType}}HTTPHandler) f
         )
 
         {{ if .HasVars }}
-        common.ExtractPathParameters(c, &in)
+        common.ExtractPathParameters(ctx, &in)
         {{ end }}
 
-        if err = c.ShouldBind(in{{.Body}}); err != nil {
-            c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"err": err.Error()})
+        if err = ctx.ShouldBind(in{{.Body}}); err != nil {
+            ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
             return
         }
         {{if $validate}}
-        v,ok := interface{}(in).(common.Validator)
-        if ok {
-            if err = v.Validate();err != nil {
-                c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"err": err.Error()})
+            if err = protovalidate.Validate(in);err != nil {
+                ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
                 return
             }
-        }
         {{end}}
         // execute
-        out, err = srv.{{.Name}}(c, in)
+        out, err = srv.{{.Name}}(ctx, in)
         if err != nil {
-            c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"err": err.Error()})
+            ctx.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
             return
         }
 
-        c.JSON(http.StatusOK, out)
+        ctx.JSON(http.StatusOK, out)
     }
 }
 {{end}}
@@ -77,23 +71,37 @@ var serviceCodeTmpl = `
 {{$package := .PackageName}}
 {{$serviceType := .ServiceType}}
 {{$sampleMethod := index .Methods 0 }}
+{{$validate := .GenValidate}}
 
 /*
 {{$serviceType}}HTTPHandler is the service handler where the individual method handlers are implemented for {{$serviceType}}
 */
 /* === IMPLEMENTATION INSTRUCTIONS ===
+
 Initially, the service is implemented by {{$package}}.Unimplemented{{$serviceType}}HTTPServer, which means that all unimplemented 
 methods will respond with an HTTP 500 status and a JSON formatted error message.
+
+{{if $validate}}
+This service has been configured automatically to use the protovalidate library (see: https://buf.build/docs/protovalidate/) to create validation code
+based on annotations in the .proto file. This means that the incoming request will be validated against any validation annotations present in the .proto file 
+and throw a HTTP 400 (Bad Request) error on failure before the request reaches the handler methods in this file. 
+
+There is no need to validate the request inputs in these methods except when not covered by any validation annotations. 
+{{end}}
 
 The following tasks remain to implement this service.
 
 * Firstly - implement each of the individual method handlers like this:
 
-func (s *{{$serviceType}}HTTPHandler) {{$sampleMethod.Name}}(ctx context.Context, req *{{$package}}.{{$sampleMethod.Request}}) (*{{$package}}.{{$sampleMethod.Reply}}, error) {
- 	return &{{$package}}.{{$sampleMethod.Reply}}{
+func (s *{{$serviceType}}HTTPHandler) {{$sampleMethod.Name}}(ctx *gin.Context, req *{{$package}}.{{$sampleMethod.Request}}) (*{{$package}}.{{$sampleMethod.Reply}}, error) {
+ 	
+    // do some logic here
+
+    return &{{$package}}.{{$sampleMethod.Reply}}{
 		Id:       req.Id,
         ... other data
 	}, nil   
+
 }
 
 * Secondly, to register this service handler with Go-Gin, do something like:
@@ -123,11 +131,14 @@ func New{{$serviceType}}HTTPHandler() *{{$serviceType}}HTTPHandler {
 }
 
 {{range .Methods}}
-/*
-func (s *{{$serviceType}}HTTPHandler) {{.Name}}(ctx context.Context, req *{{$package}}.{{.Request}}) (*{{$package}}.{{.Reply}}, error) {
-    panic("not implemented")
+    {{- $reply := printf "%v.%v" $package .Reply }}
+    {{- if contains .Reply "." }}
+        {{- $reply = .Reply}}
+    {{- end }}
+func (s *{{$serviceType}}HTTPHandler) {{.Name}}(ctx *gin.Context, req *{{$package}}.{{.Request}}) (*{{ $reply }}, error) {
+    return nil, errors.New("method {{.Name}} not implemented")
 }
-*/
+
 {{end}}
  
 

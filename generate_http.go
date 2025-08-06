@@ -14,13 +14,14 @@ import (
 )
 
 const (
-	errorsPackage  = protogen.GoImportPath("errors")
-	httpPackage    = protogen.GoImportPath("net/http")
-	contextPackage = protogen.GoImportPath("context")
-	ginPackage     = protogen.GoImportPath("github.com/gin-gonic/gin")
-	commonPackage  = protogen.GoImportPath("github.com/shaun-plumb/protoc-gen-go-gin/common")
-	codesPackage   = protogen.GoImportPath("google.golang.org/grpc/codes")
-	statusPackage  = protogen.GoImportPath("google.golang.org/grpc/status")
+	errorsPackage   = protogen.GoImportPath("errors")
+	httpPackage     = protogen.GoImportPath("net/http")
+	contextPackage  = protogen.GoImportPath("context")
+	ginPackage      = protogen.GoImportPath("github.com/gin-gonic/gin")
+	commonPackage   = protogen.GoImportPath("github.com/shaun-plumb/protoc-gen-go-gin/common")
+	codesPackage    = protogen.GoImportPath("google.golang.org/grpc/codes")
+	statusPackage   = protogen.GoImportPath("google.golang.org/grpc/status")
+	validatePackage = protogen.GoImportPath("buf.build/go/protovalidate")
 
 	deprecationComment = "// Deprecated: Do Not Use."
 )
@@ -97,6 +98,10 @@ func generateFileContent(gen *protogen.Plugin, file *protogen.File, g *protogen.
 	g.P("var _ =", errorsPackage.Ident("New"))
 	g.P("var _ = ", commonPackage.Ident("ExtractPathParameters"))
 	g.P("var _ = ", statusPackage.Ident("New"))
+
+	if *gp.GenValidateCode {
+		g.P("var _ = ", validatePackage.Ident("Validate"))
+	}
 
 	g.P("const _ = ", ginPackage.Ident("Version"))
 	g.P("const _ = ", codesPackage.Ident("OK"))

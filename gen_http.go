@@ -41,9 +41,15 @@ func (s *serviceDesc) execute(serviceCode bool) string {
 	if serviceCode {
 		srv = "service"
 		tmpl = serviceCodeTmpl
-	} 
+	}
 
-	tmplt, err := template.New(srv).Parse(strings.TrimSpace(tmpl))
+	funcs := map[string]any{
+		"contains":  strings.Contains,
+		"hasPrefix": strings.HasPrefix,
+		"hasSuffix": strings.HasSuffix,
+	}
+
+	tmplt, err := template.New(srv).Funcs(funcs).Parse(strings.TrimSpace(tmpl))
 	if err != nil {
 		panic(err)
 	}
