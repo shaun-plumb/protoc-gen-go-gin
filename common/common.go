@@ -30,6 +30,12 @@ func (s *GeneralHTTPError) AddProtoViolations(err *protovalidate.ValidationError
 	}
 }
 
+func GenerateErrorsFromProtoViolation(viols *protovalidate.ValidationError) (GeneralHTTPError) {
+	err := GeneralHTTPError{StatusCode: 400}
+	err.AddProtoViolations(viols)
+	return err
+}
+
 func ExtractPathParameters(c *gin.Context, in any) {
 	if len(c.Params) > 0 {
 		pMap := "{"
