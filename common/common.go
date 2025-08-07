@@ -20,7 +20,7 @@ type GeneralHTTPError struct {
 	StatusCode int             `json:"statuscode"`
 }
 
-func CreateHTTPError(stat int, typ string) GeneralHTTPError {
+func CreateHTTPError(stat int) GeneralHTTPError {
 	return GeneralHTTPError{StatusCode: stat}
 }
 
