@@ -20,6 +20,10 @@ type GeneralHTTPError struct {
 	StatusCode int             `json:"statuscode"`
 }
 
+func CreateHTTPError(stat int, typ string) GeneralHTTPError {
+	return GeneralHTTPError{StatusCode: stat}
+}
+
 func (s *GeneralHTTPError) AddError(typ string, field string, message string) {
 	s.Errors = append(s.Errors, internalError{Type: typ, Field: field, Message: message})
 }

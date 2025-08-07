@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Remove local stale tags : git tag -l | xargs git tag -d && git fetch -t
+
 OLDTAG=$(gh release list -L 1 --json tagName -q '.[0].tagName')
 
 echo $OLDTAG

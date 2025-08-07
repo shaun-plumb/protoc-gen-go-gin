@@ -10,6 +10,7 @@ var httpCodeTmpl = `
 type {{.ServiceType}}HTTPHandler interface {
 {{- range .Methods}}
     {{.Name}}(*gin.Context, *{{.Request}}) (*{{.Reply}}, error)
+    Validate{{.Request}}(*gin.Context, *{{.Request}}) error
 {{- end}}
 }
 
@@ -19,9 +20,11 @@ type Unimplemented{{$svrType}}HTTPServer struct{}
 func (Unimplemented{{$svrType}}HTTPServer) {{.Name}}(*gin.Context, *{{.Request}}) (*{{.Reply}}, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method {{.Name}} not implemented")
 }
+
+func (Unimplemented{{$svrType}}HTTPServer) Validate{{.Request}}(*gin.Context, *{{.Request}}) error { return nil }
 {{end}}
 
-// Register{{.ServiceType}}HTTPHandler define http router handle by gin.
+// Register{{.ServiceType}}HTTPHandlers associates http router handlers in gin.
 func Register{{.ServiceType}}HTTPHandler(g *gin.RouterGroup, srv {{.ServiceType}}HTTPHandler) {
 {{- range .Methods}}
     g.{{.Method}}("{{.Path}}", _{{$svrType}}_{{.Name}}{{.Num}}_HTTP_Handler(srv))
@@ -47,12 +50,21 @@ func _{{$svrType}}_{{.Name}}{{.Num}}_HTTP_Handler(srv {{$svrType}}HTTPHandler) f
             ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
             return
         }
-        {{if $validate}}
-            if err = protovalidate.Validate(in);err != nil {
-                ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-                return
-            }
-        {{end}}
+
+    {{if $validate}}
+        // call protovalidate to apply any validation rules in the .proto file
+        if err = protovalidate.Validate(in);err != nil {
+            ctx.AbortWithStatusJSON(http.StatusBadRequest, common.GenerateErrorsFromProtoViolation(err.(*protovalidate.ValidationError)))
+            return
+        }
+    {{end}}
+
+        // Call any supplied validation routines
+        if err = srv.Validate{{.Request}}(ctx, in); err != nil {
+            ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+            return
+        }
+
         // execute
         out, err = srv.{{.Name}}(ctx, in)
         if err != nil {
