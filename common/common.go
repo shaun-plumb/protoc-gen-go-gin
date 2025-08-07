@@ -5,18 +5,29 @@ import (
 	"encoding/json"
 	"strings"
 
+	"buf.build/go/protovalidate"
 	"github.com/gin-gonic/gin"
 )
 
-type Error struct {
+type internalError struct {
 	Type    string `json:"type"`
 	Field   string `json:"field"`
 	Message string `json:"message"`
 }
 
 type GeneralHTTPError struct {
-	Errors     []Error `json:"errors"`
-	StatusCode int     `json:"statuscode"`
+	Errors     []internalError `json:"errors"`
+	StatusCode int             `json:"statuscode"`
+}
+
+func (s *GeneralHTTPError) AddError(typ string, field string, message string) {
+	s.Errors = append(s.Errors, internalError{Type: typ, Field: field, Message: message})
+}
+
+func (s *GeneralHTTPError) AddProtoViolations(err *protovalidate.ValidationError) {
+	for _, vl := range err.Violations {
+		s.AddError("validation", *vl.Proto.Field.Elements[0].FieldName, vl.Proto.GetMessage())
+	}
 }
 
 func ExtractPathParameters(c *gin.Context, in any) {
