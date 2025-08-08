@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"slices"
 	"strings"
 	"text/template"
 )
@@ -32,6 +33,18 @@ type methodDesc struct {
 	ResponseBody string
 }
 
+func makeSlice() []string {
+	return []string{}
+}
+
+func addToSlice(a []string, s string) []string {
+	return append(a, s)
+}
+
+func isInSlice(a []string, s string) bool {
+	return slices.Contains(a, s)
+}
+
 // execute 方法实现也其实不复杂，总起来就是 go 的 temple 包的使用
 // 提前写好模板文件，然后拿到所有需要的变量，进行模板渲染，写入文件
 func (s *serviceDesc) execute(serviceCode bool) string {
@@ -44,9 +57,12 @@ func (s *serviceDesc) execute(serviceCode bool) string {
 	}
 
 	funcs := map[string]any{
-		"contains":  strings.Contains,
-		"hasPrefix": strings.HasPrefix,
-		"hasSuffix": strings.HasSuffix,
+		"contains":   strings.Contains,
+		"hasPrefix":  strings.HasPrefix,
+		"hasSuffix":  strings.HasSuffix,
+		"makeSlice":  makeSlice,
+		"addToSlice": addToSlice,
+		"isInSlice":  isInSlice,
 	}
 
 	tmplt, err := template.New(srv).Funcs(funcs).Parse(strings.TrimSpace(tmpl))

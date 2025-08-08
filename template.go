@@ -2,26 +2,33 @@ package main
 
 var httpCodeTmpl = `
 {{/*gotype: github.com/shaun-plumb/protoc-gen-go-gin.serviceDesc*/}}
-{{$svrType := .ServiceType}}
-{{$svrName := .ServiceName}}
-{{$validate := .GenValidate}}
+{{ $svrType := .ServiceType }}
+{{ $svrName := .ServiceName }}
+{{ $validate := .GenValidate }}
+{{ $valDupes := makeSlice }}
 
 // {{.ServiceType}}HTTPHandler defines {{.ServiceType}}Server http handler
 type {{.ServiceType}}HTTPHandler interface {
 {{- range .Methods}}
     {{.Name}}(*gin.Context, *{{.Request}}) (*{{.Reply}}, error)
-    Validate{{.Request}}(*gin.Context, *{{.Request}}) error
+	{{- if eq (isInSlice $valDupes .Request) false }}
+		Validate{{.Request}}(*gin.Context, *{{.Request}}) map[string]string
+		{{- $valDupes = addToSlice $valDupes .Request}}
+	{{- end }}
 {{- end}}
 }
 
-
+{{ $valDupes := makeSlice }}
 type Unimplemented{{$svrType}}HTTPServer struct{}
 {{range .Methods}}
 func (Unimplemented{{$svrType}}HTTPServer) {{.Name}}(*gin.Context, *{{.Request}}) (*{{.Reply}}, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method {{.Name}} not implemented")
 }
+    {{- if eq (isInSlice $valDupes .Request) false }}
 
-func (Unimplemented{{$svrType}}HTTPServer) Validate{{.Request}}(*gin.Context, *{{.Request}}) error { return nil }
+    func (Unimplemented{{$svrType}}HTTPServer) Validate{{.Request}}(*gin.Context, *{{.Request}}) map[string]string { return nil }
+        {{- $valDupes = addToSlice $valDupes .Request}}
+	{{- end }}
 {{end}}
 
 // Register{{.ServiceType}}HTTPHandlers associates http router handlers in gin.
@@ -60,10 +67,15 @@ func _{{$svrType}}_{{.Name}}{{.Num}}_HTTP_Handler(srv {{$svrType}}HTTPHandler) f
     {{end}}
 
         // Call any supplied validation routines
-        if err = srv.Validate{{.Request}}(ctx, in); err != nil {
-            ctx.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-            return
-        }
+		if errs := srv.Validate{{.Request}}(ctx, in); errs != nil {
+			e := common.CreateHTTPError(http.StatusBadRequest)
+			for k, v := range errs {
+				e.AddError("validation", k, v)
+			}
+			ctx.AbortWithStatusJSON(http.StatusBadRequest, e)
+			return
+		}
+
 
         // execute
         out, err = srv.{{.Name}}(ctx, in)
@@ -129,6 +141,25 @@ func main() {
     {{$package}}Handler := service.New{{$serviceType}}HTTPHandler() 
     {{$package}}.Register{{$serviceType}}HTTPHandler(router.Group("/"), {{$package}}Handler)
 }
+
+* Thirdly, to perform any custom validation on the requests before the handlers are invoked, implement the Validate<Request> method for the appropriate request, 
+which returns a map of validation errors containing fieldname -> message. This map is then converted into standard JSON error structure and returned with a HTTP 400 status.
+For example:
+
+func (s *{{$serviceType}}HTTPHandler) Validate{{$sampleMethod.Request}}(ctx *gin.Context, req *{{$package}}.{{$sampleMethod.Request}}) map[string]string {
+    
+    valid := validate some fields here ....
+
+	if !valid {
+		return map[string]string{"<fieldname1>": "<errormessage1>",
+								"<fieldname2>": "<errormessage2>",
+                                ...etc...,}
+	}
+
+	return nil // return nil for valid requests
+
+}
+
 
 Once implemented - this message can be deleted.
 === */

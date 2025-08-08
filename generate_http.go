@@ -38,7 +38,7 @@ func generateHTTPFile(gen *protogen.Plugin, file *protogen.File, gp *GenParam) *
 	g := gen.NewGeneratedFile(filename, file.GoImportPath)
 	// 写入一些警告之类的 告诉用户不要修改
 
-	printVersions(g, gen, true)
+	printHeaders(g, gen, true)
 
 	g.P("")
 
@@ -48,7 +48,7 @@ func generateHTTPFile(gen *protogen.Plugin, file *protogen.File, gp *GenParam) *
 	return g
 }
 
-func printVersions(g *protogen.GeneratedFile, gen *protogen.Plugin, dontEdit bool, lines ...string) {
+func printHeaders(g *protogen.GeneratedFile, gen *protogen.Plugin, dontEdit bool, lines ...string) {
 	module := "unknown"
 	if bi, ok := debug.ReadBuildInfo(); ok {
 		module = bi.Main.Path
