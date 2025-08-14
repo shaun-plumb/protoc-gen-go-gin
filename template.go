@@ -140,6 +140,8 @@ func main() {
 	router := gin.Default()
     {{$package}}Handler := service.New{{$serviceType}}HTTPHandler() 
     {{$package}}.Register{{$serviceType}}HTTPHandler(router.Group("/"), {{$package}}Handler)
+    ...
+    router.Run("0.0.0.0:8080")
 }
 
 * Thirdly, to perform any custom validation on the requests before the handlers are invoked, implement the Validate<Request> method for the appropriate request, 
@@ -181,8 +183,6 @@ func New{{$serviceType}}HTTPHandler() *{{$serviceType}}HTTPHandler {
 func (s *{{$serviceType}}HTTPHandler) {{.Name}}(ctx *gin.Context, req *{{$package}}.{{.Request}}) (*{{ $reply }}, error) {
     return nil, errors.New("method {{.Name}} not implemented")
 }
-
 {{end}}
- 
 
 `

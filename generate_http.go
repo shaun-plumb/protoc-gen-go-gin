@@ -18,7 +18,6 @@ const (
 	httpPackage     = protogen.GoImportPath("net/http")
 	contextPackage  = protogen.GoImportPath("context")
 	ginPackage      = protogen.GoImportPath("github.com/gin-gonic/gin")
-	commonPackage   = protogen.GoImportPath("github.com/shaun-plumb/protoc-gen-go-gin/common")
 	codesPackage    = protogen.GoImportPath("google.golang.org/grpc/codes")
 	statusPackage   = protogen.GoImportPath("google.golang.org/grpc/status")
 	validatePackage = protogen.GoImportPath("buf.build/go/protovalidate")
@@ -26,7 +25,16 @@ const (
 	deprecationComment = "// Deprecated: Do Not Use."
 )
 
-var methodSets = make(map[string]int)
+var methodSets map[string]int
+var commonPackage = protogen.GoImportPath(getModulePath() + "/common")
+
+func getModulePath() string {
+	bi, ok := debug.ReadBuildInfo()
+	if !ok {
+		return ""
+	}
+	return bi.Path
+}
 
 // generateHTTPFile generates a _http.pb.go file containing gin handler.
 func generateHTTPFile(gen *protogen.Plugin, file *protogen.File, gp *GenParam) *protogen.GeneratedFile {
@@ -121,6 +129,8 @@ func genService(gen *protogen.Plugin, file *protogen.File, g *protogen.Generated
 		g.P("//")
 		g.P(deprecationComment)
 	}
+
+	methodSets = make(map[string]int)
 
 	// HTTP Server.
 	// 服务的主要变量，比如服务名 服务类型等

@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package blog;
+
+import "buf/validate/validate.proto";
+import "google/api/annotations.proto";
+import "google/protobuf/empty.proto";
+
+option go_package = "testing-generated-gin/blog";
+option java_multiple_files = true;
+option java_package = "api.blog";
+
+message CreateBlogRequest {
+  string author_id = 1 [(buf.validate.field).string.min_len = 1];
+  string title = 2 [(buf.validate.field).string.min_len = 1];
+  string content = 3 [(buf.validate.field).string.min_len = 1];
+}
+
+message CreateBlogResponse {
+  string id = 1;
+  string author_id = 2;
+  string title = 3;
+  string content = 4;
+}
+
+message ReadBlogRequest {
+  string id = 1;
+}
+
+message ReadBlogResponse {
+  string id = 1;
+  string author_id = 2;
+  string title = 3;
+  string content = 4;
+}
+
+message UpdateBlogRequest {
+  string id = 1;
+  string author_id = 2;
+  string title = 3;
+  string content = 4;
+}
+
+message UpdateBlogResponse {
+  string id = 1;
+  string author_id = 2;
+  string title = 3;
+  string content = 4;
+}
+
+message TestPathRequest {
+  string user = 1;
+  string id = 2;
+}
+
+message TestPathResponse {
+  string response = 1;
+}
+
+message DeleteBlogRequest {
+  string id = 1;
+}
+
+// message Empty {}
+
+service BlogService {
+  rpc CreateBlog(CreateBlogRequest) returns (CreateBlogResponse) {
+    option (google.api.http) = {
+      post: "/blog"
+      body: "*"
+    };
+  }
+
+  rpc ReadBlog(ReadBlogRequest) returns (ReadBlogResponse) {
+    option (google.api.http) = {get: "/blog/{id}"};
+  }
+
+  rpc UpdateBlog(UpdateBlogRequest) returns (UpdateBlogResponse) {
+    option (google.api.http) = {
+      put: "/blog/{id}"
+      body: "*"
+    };
+  }
+
+  rpc DeleteBlog(DeleteBlogRequest) returns (google.protobuf.Empty) {
+    option (google.api.http) = {delete: "/blog/{id}"};
+  }
+}
+
+service PathService {
+  rpc TestPath(TestPathRequest) returns (TestPathResponse) {
+    option (google.api.http) = {get: "/testpath/{user}/path/{id}"};
+  }
+}

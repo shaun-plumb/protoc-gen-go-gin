@@ -11,18 +11,11 @@ import (
 const Version = "v0.0.3"
 
 func main() {
-	// 1. 传参定义
-	// 即 插件是支持自定义参数的，这样我们可以更加灵活，针对不同的场景生成不同的代码
 	var flags flag.FlagSet
-	// 是否忽略没有指定 google.api 的方法
 	omitempty := flags.Bool("omitempty", true, "omit if google.api is empty")
-	// 我这里同时支持了 gin 和 iris 可以通过参数指定生成
-	// 是否生校验代码块
-	// 发现了一个很有用的插件 github.com/envoyproxy/protoc-gen-validate
-	// 可以在 pb 的 message 中设置参数规则，然后会生成一个 validate.go 的文件 针对每个 message 生成一个 Validate() 方法
-	// 我在每个 handler 处理业务前做了一次参数校验判断，通过这个 flag 控制是否生成这段校验代码
+
+	// Flag to include validations from protoc-gen-validate which uses validations embedded in the .proto file
 	genValidateCode := flags.Bool("validate", false, "add validate request params in handler")
-	// 生成代码时参数 这么传：--go-http_out=router=iris,validate=true:.
 
 	genService := flags.Bool("service", false, "generate service code")
 	genPath := flags.String("genpath", "", "directory of generated files")
