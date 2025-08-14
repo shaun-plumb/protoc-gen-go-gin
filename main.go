@@ -7,8 +7,7 @@ import (
 	"google.golang.org/protobuf/types/pluginpb"
 )
 
-// Version protoc-gen-go-gin 工具版本
-const Version = "v0.0.3"
+const Version = "dev"
 
 func main() {
 	var flags flag.FlagSet
@@ -17,17 +16,16 @@ func main() {
 	// Flag to include validations from protoc-gen-validate which uses validations embedded in the .proto file
 	genValidateCode := flags.Bool("validate", false, "add validate request params in handler")
 
-	genService := flags.Bool("service", false, "generate service code")
+	genServiceFiles := flags.Bool("service", false, "generate service code")
 	genPath := flags.String("genpath", "", "directory of generated files")
 
 	gp := &GenParam{
 		Omitempty:       omitempty,
 		GenValidateCode: genValidateCode,
-		GenService:      genService,
+		GenServiceFiles: genServiceFiles,
 		GenPath:         genPath,
 	}
 
-	// 这里就是入口，指定 option 后执行 Run 方法 ，我们的主逻辑就是在 Run 方法
 	protogen.Options{
 		ParamFunc: flags.Set,
 	}.Run(func(gen *protogen.Plugin) error {
@@ -36,9 +34,10 @@ func main() {
 			if !f.Generate {
 				continue
 			}
-			// 这里是我们的生成代码方法
-			generateHTTPFile(gen, f, gp)
-			if *gp.GenService {
+			// generate the HTTP handlers
+			generateHTTPHandlerFile(gen, f, gp)
+			// if we are generating the service, do that here
+			if *gp.GenServiceFiles {
 				if *gp.GenPath != "" {
 					generateServiceFiles(gen, f, gp)
 				} else {
@@ -53,7 +52,7 @@ func main() {
 type GenParam struct {
 	Omitempty       *bool
 	GenValidateCode *bool
-	GenService      *bool
+	GenServiceFiles *bool
 	GenPath         *string
 	GenRegister     *bool
 }

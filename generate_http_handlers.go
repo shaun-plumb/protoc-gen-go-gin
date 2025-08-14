@@ -36,16 +36,16 @@ func getModulePath() string {
 	return bi.Path
 }
 
-// generateHTTPFile generates a _http.pb.go file containing gin handler.
-func generateHTTPFile(gen *protogen.Plugin, file *protogen.File, gp *GenParam) *protogen.GeneratedFile {
+// generateHTTPHandlerFile generates a _http.pb.go file containing gin handler.
+func generateHTTPHandlerFile(gen *protogen.Plugin, file *protogen.File, gp *GenParam) *protogen.GeneratedFile {
 	if len(file.Services) == 0 || (*gp.Omitempty && !hasHTTPRule(file.Services)) {
 		return nil
 	}
-	// 这里我们可以自定义文件名
+
 	filename := file.GeneratedFilenamePrefix + "_http.pb.go"
 	g := gen.NewGeneratedFile(filename, file.GoImportPath)
-	// 写入一些警告之类的 告诉用户不要修改
 
+	// Output the versions and the don't modify header
 	printHeaders(g, gen, true)
 
 	g.P("")
@@ -123,7 +123,7 @@ func generateFileContent(gen *protogen.Plugin, file *protogen.File, g *protogen.
 	}
 }
 
-// 生成 service 相关代码
+// Generate code for rpc services defined in .proto file
 func genService(gen *protogen.Plugin, file *protogen.File, g *protogen.GeneratedFile, service *protogen.Service, gp *GenParam, serviceCode bool) {
 	if service.Desc.Options().(*descriptorpb.ServiceOptions).GetDeprecated() {
 		g.P("//")
@@ -132,8 +132,6 @@ func genService(gen *protogen.Plugin, file *protogen.File, g *protogen.Generated
 
 	methodSets = make(map[string]int)
 
-	// HTTP Server.
-	// 服务的主要变量，比如服务名 服务类型等
 	sd := &serviceDesc{
 		PackageName: string(file.GoPackageName),
 		ServiceType: service.GoName,
@@ -141,17 +139,16 @@ func genService(gen *protogen.Plugin, file *protogen.File, g *protogen.Generated
 		Metadata:    file.Desc.Path(),
 		GenValidate: *gp.GenValidateCode,
 	}
-	// 开始遍历服务的方法
+
 	for _, method := range service.Methods {
-		// 不处理
+		// skip streaming client/server
 		if method.Desc.IsStreamingClient() || method.Desc.IsStreamingServer() {
 			continue
 		}
-		// annotations 这个就是我们在 rpc 方法里 option 里定义的 http 路由
+		// build HTTP rule based on annotations
 		rule, ok := proto.GetExtension(method.Desc.Options(), annotations.E_Http).(*annotations.HttpRule)
 		if rule != nil && ok {
 			for _, bind := range rule.AdditionalBindings {
-				// 拿到 option里定义的路由， http method等信息
 				sd.Methods = append(sd.Methods, buildHTTPRule(g, method, bind))
 			}
 			sd.Methods = append(sd.Methods, buildHTTPRule(g, method, rule))
@@ -161,14 +158,12 @@ func genService(gen *protogen.Plugin, file *protogen.File, g *protogen.Generated
 		}
 	}
 
-	// 拿到了 n 个 rpc 方法，开始生成了
 	if len(sd.Methods) != 0 {
-		// 渲染
 		g.P(sd.execute(serviceCode))
 	}
 }
 
-// 检查是否有 http 规则 即
+// Check for the existence of an HTTP rule such as
 //
 //	option (google.api.http) = {
 //	     get: "/user/query"
@@ -188,7 +183,7 @@ func hasHTTPRule(services []*protogen.Service) bool {
 	return false
 }
 
-// 解析 http 规则，读取内容
+// Parse the HTTP rule and generate the appropriate handler
 func buildHTTPRule(g *protogen.GeneratedFile, m *protogen.Method, rule *annotations.HttpRule) *methodDesc {
 	var (
 		path         string
@@ -245,9 +240,7 @@ func buildHTTPRule(g *protogen.GeneratedFile, m *protogen.Method, rule *annotati
 	return md
 }
 
-// 构建 每个方法的基础信息
-// 到这里我们拿到了 我们需要生成一个 handler 的所有信息
-// 名称，输入，输出，方法类型，路由
+// Generate the basic information to define the method
 func buildMethodDesc(g *protogen.GeneratedFile, m *protogen.Method, method, path string) *methodDesc {
 	defer func() { methodSets[m.GoName]++ }()
 	return &methodDesc{
@@ -261,7 +254,7 @@ func buildMethodDesc(g *protogen.GeneratedFile, m *protogen.Method, method, path
 	}
 }
 
-// 处理 路由中 /api/user/{name} 这种情况
+// extract variables to handle path-based parameters, such as /user/{id} or /user/:id
 func buildPathVars(method *protogen.Method, path string) (res []string) {
 	for _, v := range strings.Split(path, "/") {
 		if strings.HasPrefix(v, "{") && strings.HasSuffix(v, "}") {
