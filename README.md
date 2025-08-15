@@ -1,27 +1,20 @@
 # protoc-gen-go-gin
-generate go http server code via proto buffer
+Protobuf compiler plugin to generate Go code providing HTTP handlers and basic service implementation from .proto files
 
-## install
-
-```shell
-$ go get github.com/shaun-plumb/protoc-gen-go-gin
-```
-
-## how to use
+## Install
 
 ```shell
-$ make proto
-# or
-$ protoc -I/usr/local/include -I$(GOPATH)/src/github.com/googleapis/googleapis\
- 	--proto_path=$(GOPATH)/src:. --go_out=. --go-http_out=. --go-grpc_out=.\
- 	 path/to/file.proto
+$ go install wolterskluwer.com/cwm/protoc-gen-go-gin
 ```
+## Usage
 
-## customize
+Specify the `service=true` option to generate a Go file containing sample implementation code
+for each .proto file, this also requires a `genpath=<path>` option that matches the `--go_out` flag
 
-click [here](https://yusank.github.io/posts/go-protoc-http/) to learn how to deveop a simple protoc plugin.
-
-## TODO
-
-- [x] support [validate](https://github.com/envoyproxy/protoc-gen-validate)
-- [x] gen client code.
+```shell
+protoc --go_out=./internal/generated --go_opt=paths=source_relative \
+    --plugin=protoc-gen-go-gin="$(which protoc-gen-go-gin)" \
+    --go-gin_out=./internal/generated \
+    --go-gin_opt=paths=source_relative,validate=true,service=true,genpath=./internal/generated \
+    -I=./proto -I="$THIRD_PARTY_LIB"  ./proto/**/*.proto
+```

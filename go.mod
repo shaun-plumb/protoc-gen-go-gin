@@ -1,4 +1,4 @@
-module github.com/shaun-plumb/protoc-gen-go-gin
+module wolterskluwer.com/cwm/protoc-gen-go-gin
 
 go 1.24
 
